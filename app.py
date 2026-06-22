@@ -5,7 +5,9 @@ from PIL import Image
 from torchvision import transforms
 from model import MyNN
 
-# ---------------- PAGE ----------------
+# ======================================================
+# PAGE CONFIG
+# ======================================================
 
 st.set_page_config(
     page_title="FashionAI",
@@ -13,102 +15,154 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- SIDEBAR ----------------
+# ======================================================
+# CUSTOM CSS
+# ======================================================
 
-theme = st.sidebar.selectbox(
-    "🎨 Theme",
-    ["Dark Blue", "Light Blue"]
-)
-
-# ---------------- CUSTOM CSS ----------------
-
-if theme == "Dark Blue":
-
-    bg = "#081120"
-    card = "rgba(255,255,255,0.06)"
-    text = "white"
-    accent = "#3b82f6"
-
-else:
-
-    bg = "#eaf4ff"
-    card = "rgba(255,255,255,0.65)"
-    text = "#0a2540"
-    accent = "#4da3ff"
-
-
-st.markdown(f"""
+st.markdown("""
 <style>
 
-.stApp {{
-background:{bg};
-color:{text};
-}}
+/* Main background */
 
-.hero {{
-padding:30px;
-border-radius:25px;
-background:linear-gradient(
-135deg,
-{accent},
-#60a5fa
-);
-margin-bottom:30px;
-color:white;
-}}
+.stApp{
+    background-color:#F5F7FB;
+}
 
-.glass {{
-padding:25px;
-border-radius:20px;
-background:{card};
-backdrop-filter: blur(20px);
-border:1px solid rgba(255,255,255,.1);
-}}
+/* Page spacing */
 
-.small-card {{
-padding:15px;
-border-radius:15px;
-background:{card};
-text-align:center;
-margin-top:10px;
-}}
+.block-container{
+    padding-top:2rem;
+    padding-left:4rem;
+    padding-right:4rem;
+}
+
+/* Hero section */
+
+.hero{
+    background:white;
+    padding:35px;
+    border-radius:28px;
+    box-shadow:0px 6px 24px rgba(0,0,0,.05);
+    margin-bottom:30px;
+}
+
+.hero-title{
+    font-size:42px;
+    font-weight:700;
+    color:#1D1D1F;
+}
+
+.hero-sub{
+    font-size:18px;
+    color:#6E6E73;
+}
+
+/* Cards */
+
+.card{
+    background:white;
+    border-radius:24px;
+    padding:25px;
+    box-shadow:0px 4px 20px rgba(0,0,0,.05);
+}
+
+/* Prediction mini cards */
+
+.small-card{
+    background:white;
+    border-radius:18px;
+    padding:15px;
+    text-align:center;
+    box-shadow:0px 3px 15px rgba(0,0,0,.04);
+}
+
+/* Upload section */
+
+[data-testid="stFileUploader"]{
+    background:white;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0px 4px 15px rgba(0,0,0,.04);
+}
+
+/* Metrics */
+
+[data-testid="metric-container"]{
+    background:white;
+    border-radius:20px;
+    padding:15px;
+    box-shadow:0px 4px 15px rgba(0,0,0,.05);
+}
+
+/* Buttons */
+
+.stButton button{
+    background:#0071E3 !important;
+    color:white !important;
+    border-radius:14px !important;
+    border:none !important;
+    width:100%;
+    height:50px;
+    font-size:16px;
+    font-weight:600;
+}
+
+.stButton button:hover{
+    background:#0077ED !important;
+}
+
+/* Tabs */
+
+button[data-baseweb="tab"]{
+    font-size:16px;
+    border-radius:15px;
+}
 
 </style>
 """, unsafe_allow_html=True)
 
-
-# ---------------- HERO ----------------
+# ======================================================
+# HERO
+# ======================================================
 
 st.markdown("""
-<div class='hero'>
-<h1>👕 FashionAI Classifier</h1>
+<div class="hero">
 
-Real-time clothing classification using
-CNN + PyTorch + Streamlit
+<div class="hero-title">
+👕 FashionAI
+</div>
+
+<div class="hero-sub">
+Real-time fashion image classification using CNN + PyTorch
+</div>
 
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- CLASSES ----------------
+# ======================================================
+# CLASSES
+# ======================================================
 
 classes = [
-"T-shirt/top",
-"Trouser",
-"Pullover",
-"Dress",
-"Coat",
-"Sandal",
-"Shirt",
-"Sneaker",
-"Bag",
-"Ankle boot"
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle boot"
 ]
 
-# ---------------- LOAD MODEL ----------------
+# ======================================================
+# MODEL LOAD
+# ======================================================
 
-device="cpu"
+device = "cpu"
 
-model=MyNN(1)
+model = MyNN(1)
 
 model.load_state_dict(
     torch.load(
@@ -119,71 +173,71 @@ model.load_state_dict(
 
 model.eval()
 
-# ---------------- TRANSFORM ----------------
+# ======================================================
+# IMAGE TRANSFORM
+# ======================================================
 
-transform=transforms.Compose([
+transform = transforms.Compose([
     transforms.Grayscale(),
     transforms.Resize((28,28)),
     transforms.ToTensor()
 ])
 
-# ---------------- TABS ----------------
+# ======================================================
+# TABS
+# ======================================================
 
-tab1,tab2,tab3=st.tabs(
-[
-"📤 Upload",
-"📷 Camera",
-"📘 About Model"
-]
-)
+tab1, tab2, tab3 = st.tabs([
+    "📤 Upload",
+    "📷 Camera",
+    "📘 Model Info"
+])
 
-# ===================================================
-# UPLOAD
-# ===================================================
+# ======================================================
+# UPLOAD TAB
+# ======================================================
 
 with tab1:
 
-    uploaded=st.file_uploader(
-        "Upload Image",
+    uploaded = st.file_uploader(
+        "Upload image",
         type=["jpg","jpeg","png"]
     )
 
     if uploaded:
 
-        image=Image.open(uploaded)
+        image = Image.open(uploaded)
 
-        col1,col2=st.columns([1,1])
+        col1, col2 = st.columns([1,1])
 
         with col1:
 
             st.image(
                 image,
+                caption="Input Image",
                 use_container_width=True
             )
 
-        img=transform(image)
-        img=img.unsqueeze(0)
+        img = transform(image)
+        img = img.unsqueeze(0)
 
         with torch.no_grad():
 
-            output=model(img)
+            output = model(img)
 
-            probs=torch.softmax(
+            probs = torch.softmax(
                 output,
                 dim=1
             )[0]
 
-        pred=torch.argmax(
-            probs
-        ).item()
-
-        confidence=probs[pred].item()
+        pred = torch.argmax(probs).item()
+        confidence = probs[pred].item()
 
         with col2:
 
             st.markdown(
-            "<div class='glass'>",
-            unsafe_allow_html=True
+                "<div class='card'>",
+                unsafe_allow_html=True
             )
 
             st.metric(
@@ -196,113 +250,109 @@ with tab1:
                 f"{confidence*100:.2f}%"
             )
 
-            st.progress(
-                confidence
-            )
+            st.progress(confidence)
 
             st.markdown(
-            "</div>",
-            unsafe_allow_html=True
+                "</div>",
+                unsafe_allow_html=True
             )
 
-        st.subheader(
-            "🏆 Top Predictions"
-        )
+        st.write("")
+        st.subheader("Top Predictions")
 
-        top3=torch.topk(
+        top3 = torch.topk(
             probs,
             3
         )
 
-        cols=st.columns(3)
+        cols = st.columns(3)
 
-        for idx,col in enumerate(cols):
+        for idx, col in enumerate(cols):
 
             with col:
 
-                class_idx=top3.indices[idx]
-
-                score=top3.values[idx]
+                class_idx = top3.indices[idx]
+                score = top3.values[idx]
 
                 st.markdown(
-                f"""
-                <div class='small-card'>
-                <h4>{classes[class_idx]}</h4>
-                <p>{score*100:.2f}%</p>
-                </div>
-                """,
-                unsafe_allow_html=True
+                    f"""
+                    <div class='small-card'>
+                    <h4>{classes[class_idx]}</h4>
+                    <p>{score*100:.2f}%</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
-# ===================================================
-# CAMERA
-# ===================================================
+# ======================================================
+# CAMERA TAB
+# ======================================================
 
 with tab2:
 
-    camera=st.camera_input(
-        "Take Picture"
+    camera = st.camera_input(
+        "Take picture"
     )
 
     if camera:
 
-        image=Image.open(
-            camera
-        )
+        image = Image.open(camera)
 
         st.image(
             image,
-            width=300
+            caption="Captured Image",
+            width=350
         )
 
-        img=transform(
-            image
-        ).unsqueeze(0)
+        img = transform(image)
+        img = img.unsqueeze(0)
 
         with torch.no_grad():
 
-            output=model(
-                img
-            )
+            output = model(img)
 
-            probs=torch.softmax(
+            probs = torch.softmax(
                 output,
                 dim=1
             )[0]
 
-        pred=torch.argmax(
+        pred = torch.argmax(
             probs
         ).item()
 
-        confidence=probs[
+        confidence = probs[
             pred
         ].item()
 
-        st.success(
-            f"Prediction: {classes[pred]}"
+        st.metric(
+            "Prediction",
+            classes[pred]
         )
 
         st.progress(
             confidence
         )
 
-# ===================================================
-# ABOUT
-# ===================================================
+# ======================================================
+# MODEL INFO
+# ======================================================
 
 with tab3:
 
-    st.markdown("""
-<div class='glass'>
+    st.markdown(
+    """
+<div class='card'>
 
-### Architecture
+### Model Architecture
 
-CNN:
-- Conv2D
-- BatchNorm
-- MaxPooling
-- Fully Connected Layers
-- Dropout
+CNN layers:
+
+• Conv2D  
+• ReLU  
+• BatchNorm  
+• MaxPooling  
+• Fully Connected Layers  
+• Dropout  
 
 ### Dataset
 
@@ -312,5 +362,12 @@ Fashion-MNIST
 
 PyTorch + Streamlit
 
+### Notes
+
+Designed for Fashion-MNIST images  
+(28×28 grayscale images)
+
 </div>
-""", unsafe_allow_html=True)
+""",
+unsafe_allow_html=True
+)
