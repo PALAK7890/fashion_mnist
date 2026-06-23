@@ -34,7 +34,7 @@ st.markdown("""
 
 .hero{
     background:white;
-    padding:30px;
+    padding:35px;
     border-radius:25px;
     margin-bottom:30px;
     box-shadow:0px 4px 18px rgba(0,0,0,.06);
@@ -42,32 +42,40 @@ st.markdown("""
 
 .hero h1{
     color:#1D1D1F;
-    font-size:40px;
+    font-size:42px;
 }
 
 .hero p{
     color:#6E6E73;
 }
 
-.result-card{
+.card{
     background:white;
     padding:25px;
     border-radius:20px;
     box-shadow:0px 4px 18px rgba(0,0,0,.05);
 }
 
-[data-testid="metric-container"]{
+.small-card{
     background:white;
     border-radius:15px;
     padding:15px;
-    box-shadow:0px 4px 18px rgba(0,0,0,.05);
+    text-align:center;
+    box-shadow:0px 4px 15px rgba(0,0,0,.04);
 }
 
 [data-testid="stFileUploader"]{
     background:white;
     padding:20px;
     border-radius:20px;
-    box-shadow:0px 4px 18px rgba(0,0,0,.04);
+    box-shadow:0px 4px 15px rgba(0,0,0,.05);
+}
+
+[data-testid="metric-container"]{
+    background:white;
+    border-radius:15px;
+    padding:10px;
+    box-shadow:0px 4px 15px rgba(0,0,0,.04);
 }
 
 </style>
@@ -79,13 +87,10 @@ st.markdown("""
 
 st.markdown("""
 <div class='hero'>
-
 <h1>FashionAI</h1>
-
 <p>
-CNN-based Fashion Classification using PyTorch and Streamlit
+CNN-based Fashion Classification using PyTorch
 </p>
-
 </div>
 """, unsafe_allow_html=True)
 
@@ -107,7 +112,7 @@ classes = [
 ]
 
 # ======================================================
-# LOAD MODEL
+# MODEL LOAD
 # ======================================================
 
 device = torch.device("cpu")
@@ -124,7 +129,7 @@ model.load_state_dict(
 model.eval()
 
 # ======================================================
-# TRANSFORM
+# IMAGE TRANSFORM
 # ======================================================
 
 transform = transforms.Compose([
@@ -157,127 +162,86 @@ def predict(image):
 
 
 # ======================================================
-# TABS
+# IMAGE UPLOAD
 # ======================================================
 
-tab1, tab2 = st.tabs([
-    "Upload Image",
-    "Camera"
-])
+uploaded = st.file_uploader(
+    "Upload an image",
+    type=["jpg","jpeg","png"]
+)
 
-# ======================================================
-# UPLOAD TAB
-# ======================================================
+if uploaded:
 
-with tab1:
+    image = Image.open(uploaded)
 
-    uploaded = st.file_uploader(
-        "Upload image",
-        type=["png","jpg","jpeg"]
-    )
+    pred, probs = predict(image)
 
-    if uploaded:
+    left,right = st.columns([1,1])
 
-        image = Image.open(uploaded)
+    with left:
 
-        pred, probs = predict(image)
-
-        left, right = st.columns([1,1])
-
-        with left:
-
-            st.image(
-                image,
-                caption="Input Image",
-                use_container_width=True
-            )
-
-        with right:
-
-            st.markdown(
-                "<div class='result-card'>",
-                unsafe_allow_html=True
-            )
-
-            st.metric(
-                "Prediction",
-                classes[pred]
-            )
-
-            st.metric(
-                "Confidence",
-                f"{probs[pred]*100:.2f}%"
-            )
-
-            st.progress(
-                float(probs[pred])
-            )
-
-            st.markdown(
-                "</div>",
-                unsafe_allow_html=True
-            )
-
-        st.subheader("Probability Distribution")
-
-        df = pd.DataFrame({
-            "Class": classes,
-            "Probability": probs.numpy()
-        })
-
-        st.bar_chart(
-            df.set_index("Class")
+        st.image(
+            image,
+            caption="Uploaded Image",
+            use_container_width=True
         )
 
-# ======================================================
-# CAMERA TAB
-# ======================================================
+    with right:
 
-with tab2:
-
-    camera = st.camera_input(
-        "Capture image"
-    )
-
-    if camera:
-
-        image = Image.open(camera)
-
-        pred, probs = predict(image)
-
-        left, right = st.columns([1,1])
-
-        with left:
-
-            st.image(
-                image,
-                caption="Captured Image",
-                use_container_width=True
-            )
-
-        with right:
-
-            st.metric(
-                "Prediction",
-                classes[pred]
-            )
-
-            st.metric(
-                "Confidence",
-                f"{probs[pred]*100:.2f}%"
-            )
-
-            st.progress(
-                float(probs[pred])
-            )
-
-        st.subheader("Probability Distribution")
-
-        df = pd.DataFrame({
-            "Class": classes,
-            "Probability": probs.numpy()
-        })
-
-        st.bar_chart(
-            df.set_index("Class")
+        st.markdown(
+            "<div class='card'>",
+            unsafe_allow_html=True
         )
+
+        st.metric(
+            "Prediction",
+            classes[pred]
+        )
+
+        st.metric(
+            "Confidence",
+            f"{probs[pred]*100:.2f}%"
+        )
+
+        st.progress(
+            float(probs[pred])
+        )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    st.subheader("Top Predictions")
+
+    top3 = torch.topk(probs,3)
+
+    cols = st.columns(3)
+
+    for idx,col in enumerate(cols):
+
+        with col:
+
+            class_idx = top3.indices[idx]
+            score = top3.values[idx]
+
+            st.markdown(
+            f"""
+            <div class='small-card'>
+            <h4>{classes[class_idx]}</h4>
+            <p>{score*100:.2f}%</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
+
+    st.subheader("Probability Distribution")
+
+    df = pd.DataFrame({
+        "Class":classes,
+        "Probability":probs.numpy()
+    })
+
+    st.bar_chart(
+        df.set_index("Class")
+    )
